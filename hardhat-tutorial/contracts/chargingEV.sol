@@ -30,29 +30,32 @@ contract ChargingEV {
     mapping(uint => bool) public PileHealth;
 
     //充电结束，数据已上报的事件
-    event chargingFinished(
+    event ChargingFinished(
         uint indexed chargingPileID,
         uint chargingTimeInMinutes,
         uint chargingFinishTime,
         uint energyUsed);
-    //开始充电的事件
-    event ChargingStarted(uint indexed chargingPileID);
     //健康状态已上报的事件
     event PileHealthReported(
         uint indexed chargingPileID,
         bool pileHealth,
         uint currentTime);
+    //充电桩工作状态变化的事件
+    event PileWorkingStatusChanged(
+        uint indexed chargingPileID,
+        bool pileWorkingStatus,
+        uint changingTime);
 
     ChargingData[] public chargingDatas;
-    
+
     PileHealthData[] public pileHealthDatas;
 
     //开始充电的函数，充电桩开始充电时执行
-    function startCharging(uint _chargingPileID) public{
+    function startCharging(uint _chargingPileID, uint _chargingStartTime) public{
         //开始充电，将工作状态设为true
         PileWorkingStatus[_chargingPileID] = true;
-        //触发开始充电的事件
-        emit ChargingStarted(_chargingPileID);
+        //触发工作状态改变的事件
+        emit PileWorkingStatusChanged(_chargingPileID, PileWorkingStatus[_chargingPileID], _chargingStartTime);
     }
     
     //健康状态上报函数，充电桩定时上报健康状态时执行
@@ -80,7 +83,7 @@ contract ChargingEV {
         uint _chargingTimeInMinutes,
         uint _chargingFinishTime,
         uint _energyUsed) public {
-        //上传充电桩编号、充电时间、充电量三个数据
+        //上传充电桩编号、充电时长、充电结束时间、充电量四个数据
         chargingDatas.push(ChargingData(
             _chargingPileID,
             _chargingTimeInMinutes,
@@ -89,11 +92,13 @@ contract ChargingEV {
         //充电结束，将工作状态设为false
         PileWorkingStatus[_chargingPileID] = false;
         //触发充电结束，数据已上报的事件
-        emit chargingFinished(
+        emit ChargingFinished(
             _chargingPileID,
             _chargingTimeInMinutes,
             _chargingFinishTime,
             _energyUsed);
+        //触发工作状态改变的事件
+        emit PileWorkingStatusChanged(_chargingPileID, PileWorkingStatus[_chargingPileID], _chargingFinishTime);
     }
 
     //读取充电数据
